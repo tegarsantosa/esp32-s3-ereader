@@ -1,5 +1,7 @@
 # ESP32-S3 E-Reader
 
+![Demo](./screenshots/demo.jpg)
+
 Firmware for an ESP32-S3 e-reader with a small SPI colour TFT (default: **1.8" 128×160 ST7735S**)
 and **one or three buttons**. You upload books over **WiFi** from a phone or computer browser.
 
@@ -16,7 +18,11 @@ and **one or three buttons**. You upload books over **WiFi** from a phone or com
 
 ## 1. Hardware
 
-![Hardware](IMG_1208.JPG)
+![Hardware](./screenshots/hardware.jpg)
+
+1. 128x160 RGB TFT Display
+2. S3 extender v1.6 board
+3. ESP32-S3 board
 
 ### Display wiring (SPI TFT → ESP32-S3)
 
@@ -31,7 +37,6 @@ and **one or three buttons**. You upload books over **WiFi** from a phone or com
 | CS                     | **41** | `CS GPIO` (-1 if tied to GND) |
 | BLK / LED / BL         | **42** | `BLK / LED backlight GPIO` (-1 = always on) |
 
-These defaults match the "S3 extender v1.6" board (the same wiring as Xiaozhi's `bread-compact-wifi-lcd`).
 Any free GPIOs work. Avoid 19/20 (USB), 26–32 (flash), 33–37 on boards with octal PSRAM, and 43/44 (UART log).
 
 ### Buttons
