@@ -1,0 +1,28 @@
+# ---- target & flash -------------------------------------------------------
+CONFIG_IDF_TARGET="esp32s3"
+# Flash size + partition table. This board (ESP32-S3 N16R8) has 16 MB.
+# For 4 MB / 8 MB boards use FLASHSIZE_4MB/8MB with partitions_4mb/8mb.csv
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_16mb.csv"
+
+# ---- performance ------------------------------------------------------------
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384
+# book conversion keeps the CPU busy for a few seconds; don't warn about it
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n
+
+# ---- book storage (FAT on internal flash) -----------------------------------
+CONFIG_FATFS_LFN_HEAP=y
+CONFIG_FATFS_MAX_LFN=255
+CONFIG_FATFS_API_ENCODING_UTF_8=y
+CONFIG_FATFS_CODEPAGE_437=y
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=4096
+CONFIG_WL_SECTOR_SIZE_4096=y
+
+# ---- WiFi upload server -----------------------------------------------------
+CONFIG_LWIP_MAX_SOCKETS=16
+CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+CONFIG_HTTPD_MAX_URI_LEN=512

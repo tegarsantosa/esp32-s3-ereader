@@ -1,0 +1,181 @@
+menu "E-Reader Configuration"
+
+    menu "Display"
+
+        choice EREADER_LCD_PRESET
+            prompt "Display panel"
+            default EREADER_LCD_128X160
+            help
+                Pick the TFT module you are using. Each preset sets the controller,
+                resolution, RAM offsets, colour order and inversion. Choose "Custom"
+                to enter everything by hand.
+
+            config EREADER_LCD_128X160
+                bool "1.8\"  128x160  ST7735S"
+            config EREADER_LCD_128X128
+                bool "1.44\" 128x128  ST7735 / ILI9163"
+            config EREADER_LCD_80X160
+                bool "0.96\" 80x160   ST7735S"
+            config EREADER_LCD_135X240
+                bool "1.14\" 135x240  ST7789"
+            config EREADER_LCD_240X240
+                bool "1.3\"/1.54\" 240x240 ST7789"
+            config EREADER_LCD_240X280
+                bool "1.69\" 240x280  ST7789"
+            config EREADER_LCD_172X320
+                bool "1.47\" 172x320  ST7789"
+            config EREADER_LCD_170X320
+                bool "1.9\"  170x320  ST7789"
+            config EREADER_LCD_240X320_ST7789
+                bool "2.0\"  240x320  ST7789"
+            config EREADER_LCD_240X320_ILI9341
+                bool "2.4\"/2.8\" 240x320 ILI9341"
+            config EREADER_LCD_320X480
+                bool "3.5\"  320x480  ST7796S"
+            config EREADER_LCD_CUSTOM
+                bool "Custom"
+        endchoice
+
+        choice EREADER_LCD_CUSTOM_DRIVER
+            prompt "Controller (custom panel)"
+            depends on EREADER_LCD_CUSTOM
+            default EREADER_DRV_CUSTOM_ST7789
+            config EREADER_DRV_CUSTOM_ST7735
+                bool "ST7735 / ST7735S / ILI9163"
+            config EREADER_DRV_CUSTOM_ST7789
+                bool "ST7789"
+            config EREADER_DRV_CUSTOM_ILI9341
+                bool "ILI9341"
+            config EREADER_DRV_CUSTOM_ST7796
+                bool "ST7796"
+        endchoice
+
+        config EREADER_LCD_CUSTOM_WIDTH
+            int "Panel width in pixels (portrait)"
+            depends on EREADER_LCD_CUSTOM
+            range 64 480
+            default 240
+        config EREADER_LCD_CUSTOM_HEIGHT
+            int "Panel height in pixels (portrait)"
+            depends on EREADER_LCD_CUSTOM
+            range 64 480
+            default 320
+        config EREADER_LCD_CUSTOM_XOFF
+            int "Column offset in controller RAM"
+            depends on EREADER_LCD_CUSTOM
+            range 0 200
+            default 0
+        config EREADER_LCD_CUSTOM_YOFF
+            int "Row offset in controller RAM"
+            depends on EREADER_LCD_CUSTOM
+            range 0 200
+            default 0
+
+        choice EREADER_LCD_COLOR_ORDER
+            prompt "Colour order"
+            default EREADER_LCD_ORDER_PRESET
+            help
+                If red and blue look swapped, change this.
+            config EREADER_LCD_ORDER_PRESET
+                bool "Panel default"
+            config EREADER_LCD_ORDER_RGB
+                bool "RGB"
+            config EREADER_LCD_ORDER_BGR
+                bool "BGR"
+        endchoice
+
+        choice EREADER_LCD_INVERSION
+            prompt "Colour inversion"
+            default EREADER_LCD_INVERT_PRESET
+            help
+                If white shows as black (negative image), change this.
+            config EREADER_LCD_INVERT_PRESET
+                bool "Panel default"
+            config EREADER_LCD_INVERT_OFF
+                bool "Off"
+            config EREADER_LCD_INVERT_ON
+                bool "On"
+        endchoice
+
+        config EREADER_LCD_MIRROR_X
+            bool "Mirror horizontally (fix mirrored text)"
+            default n
+        config EREADER_LCD_MIRROR_Y
+            bool "Mirror vertically"
+            default n
+
+        config EREADER_LCD_SPI_MHZ
+            int "SPI clock (MHz)"
+            range 1 80
+            default 27
+            help
+                27 MHz is safe for ST7735. ST7789/ILI9341 usually run at 40-62 MHz.
+
+        config EREADER_PIN_MOSI
+            int "SDA / MOSI GPIO"
+            default 47
+        config EREADER_PIN_SCLK
+            int "SCL / SCK GPIO"
+            default 21
+        config EREADER_PIN_CS
+            int "CS GPIO (-1 if tied to GND)"
+            default 41
+        config EREADER_PIN_DC
+            int "DC / A0 / RS GPIO"
+            default 40
+        config EREADER_PIN_RST
+            int "RES / RST GPIO (-1 if not connected)"
+            default 45
+        config EREADER_PIN_BL
+            int "BLK / LED backlight GPIO (-1 if always on)"
+            default 42
+        config EREADER_BL_ACTIVE_HIGH
+            bool "Backlight is on when the pin is HIGH"
+            default y
+    endmenu
+
+    menu "Buttons"
+        config EREADER_BTN_GPIO
+            int "OK / main button GPIO (RTC capable, 0-21, to wake from sleep)"
+            default 0
+            help
+                GPIO0 is the BOOT button on most ESP32-S3 boards.
+                With only this button the reader uses tap / double tap / hold gestures.
+        config EREADER_BTN_NEXT_GPIO
+            int "Down / next page button GPIO (-1 = not fitted)"
+            default 39
+            help
+                Optional. With next and previous buttons fitted, the main button
+                becomes a simple OK button (press = select, hold 3 s = sleep).
+                Use Settings -> Button test on the device to find the GPIO numbers.
+        config EREADER_BTN_PREV_GPIO
+            int "Up / previous page button GPIO (-1 = not fitted)"
+            default 38
+        config EREADER_BTN_ACTIVE_LOW
+            bool "Buttons connect the pin to GND when pressed"
+            default y
+        config EREADER_BTN_LONG_MS
+            int "Hold time for 'select' (ms)"
+            default 600
+        config EREADER_BTN_DOUBLE_MS
+            int "Double-press window (ms)"
+            default 300
+        config EREADER_BTN_POWER_MS
+            int "Hold time to go to sleep (ms)"
+            default 3000
+    endmenu
+
+    menu "WiFi transfer"
+        config EREADER_AP_SSID_PREFIX
+            string "Hotspot name prefix (last 4 MAC digits are appended)"
+            default "EReader"
+        config EREADER_AP_PASSWORD
+            string "Hotspot password (8+ chars, empty = open network)"
+            default "readbooks"
+        config EREADER_AP_CHANNEL
+            int "Hotspot channel"
+            range 1 13
+            default 6
+    endmenu
+
+endmenu

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-Reader</title>
+<style>
+:root{--bg:#fff;--fg:#111;--dim:#777;--line:#e5e5e5;--acc:#2563eb;--bad:#c62828}
+@media (prefers-color-scheme:dark){:root{--bg:#121212;--fg:#eee;--dim:#999;--line:#2c2c2c;--acc:#6ea0ff;--bad:#ff6b6b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px}
+h1{font-size:1.3rem;margin:0 0 16px}
+#pick{display:block;border:1.5px solid var(--line);padding:22px;text-align:center;cursor:pointer;}
+#pick.over{border-color:var(--acc)}
+.dim{color:var(--dim);font-size:.85rem}
+ul{list-style:none;margin:16px 0 0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button{border:0;background:none;color:var(--bad);font:inherit;cursor:pointer;padding:4px 6px}
+.bar{height:3px;background:var(--line);margin-top:4px}.bar i{display:block;height:100%;width:0;background:var(--acc)}
+.job{padding:8px 0}.err{color:var(--bad)}
+details{margin-top:24px}summary{cursor:pointer;color:var(--dim)}
+input[type=text],input[type=password]{width:100%;padding:8px;margin:6px 0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit}
+.save{color:var(--acc);padding:6px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>E-Reader</h1>
+<label id="pick">Add books<input id="file" type="file" multiple accept=".epub,.txt,.md,.markdown" hidden></label>
+<p class="dim">EPUB, TXT or Markdown</p>
+<div id="jobs"></div>
+<ul id="books"></ul>
+<p class="dim" id="space"></p>
+<details>
+  <summary>Home WiFi</summary>
+  <form id="wifi">
+    <input type="text" name="ssid" id="ssid" placeholder="Network" maxlength="32" autocomplete="off">
+    <input type="password" name="pass" placeholder="Password" maxlength="64">
+    <button class="save" type="submit">Save</button> <span class="dim" id="wmsg"></span>
+  </form>
+</details>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const OK = ['epub','txt','md','markdown'];
+const ext = n => n.split('.').pop().toLowerCase();
+const size = n => n < 1048576 ? Math.round(n/1024)+' KB' : (n/1048576).toFixed(1)+' MB';
+
+async function load(){
+  try{
+    const d = await (await fetch('/api/books',{cache:'no-store'})).json();
+    $('#space').textContent = size(d.free)+' free';
+    if (d.home && !$('#ssid').value) $('#ssid').value = d.home;
+    const ul = $('#books'); ul.innerHTML = '';
+    for (const b of d.books){
+      const li = document.createElement('li');
+      const s = document.createElement('span'); s.textContent = b.name; s.title = b.name;
+      const x = document.createElement('button'); x.textContent = 'Delete';
+      x.onclick = async () => { if (confirm('Delete '+b.name+'?')){ await fetch('/api/delete?name='+encodeURIComponent(b.name),{method:'POST'}); load(); } };
+      li.append(s, x); ul.append(li);
+    }
+  }catch(e){ $('#space').textContent = 'Reader not reachable'; }
+}
+
+function upload(f){
+  return new Promise(done => {
+    const row = document.createElement('div'); row.className = 'job';
+    row.innerHTML = '<span></span><div class="bar"><i></i></div>';
+    row.firstChild.textContent = f.name;
+    $('#jobs').append(row);
+    const bar = row.querySelector('i');
+    const fail = m => { row.firstChild.textContent = f.name+' - '+m; row.className = 'job err'; done(); };
+    if (!OK.includes(ext(f.name))) return fail('not supported');
+    const x = new XMLHttpRequest();
+    x.open('POST','/api/upload?name='+encodeURIComponent(f.name.replace(/[\/\\:*?"<>|]/g,'_')));
+    x.upload.onprogress = e => bar.style.width = (e.loaded*100/e.total)+'%';
+    x.onload = () => {
+      if (x.status === 200){ row.remove(); done(); }
+      else { let m = 'failed'; try{ m = JSON.parse(x.responseText).error }catch(e){} fail(m); }
+    };
+    x.onerror = () => fail('connection lost');
+    x.send(f);
+  });
+}
+
+async function add(files){ for (const f of files) await upload(f); load(); }
+
+const pick = $('#pick');
+$('#file').onchange = e => { add([...e.target.files]); e.target.value = ''; };
+pick.ondragover = e => { e.preventDefault(); pick.classList.add('over'); };
+pick.ondragleave = () => pick.classList.remove('over');
+pick.ondrop = e => { e.preventDefault(); pick.classList.remove('over'); add([...e.dataTransfer.files]); };
+
+$('#wifi').onsubmit = async e => {
+  e.preventDefault();
+  const r = await fetch('/api/wifi',{method:'POST',body:new URLSearchParams(new FormData(e.target))});
+  $('#wmsg').textContent = r.ok ? 'Saved' : 'Failed';
+};
+load();
+</script>
+</body>
+</html>
